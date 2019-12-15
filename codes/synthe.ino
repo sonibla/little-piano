@@ -1,21 +1,32 @@
 #include <CapacitiveSensor.h>
 
+// ----- SETTINGS -----
+// Baud rate. Should be the same in synthe.py
+const int baudRate = 9600;
 
-const char pinDO[]  = {22,23};
-const char pinREb[] = {24,25};
-const char pinRE[]  = {26,27};
-const char pinMIb[] = {28,29};
-const char pinMI[]  = {30,31};
-const char pinFA[]  = {32,33};
-const char pinFAd[] = {34,35};
-const char pinSOL[] = {36,37};
-const char pinLAb[] = {38,39};
-const char pinLA[]  = {40,41};
-const char pinSIb[] = {42,43};
-const char pinSI[]  = {44,45};
-const char pinOctaveSuiv[] = {46,47};
-const char pinOctavePrec[] = {48,49};
+// Connections to LEDs
+const char OctaveLEDs[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+const char OctaveChangeConfirmation = 11;
 
+// Connections between the keyboard and your Arduino:
+const char pinDO[]  = {22, 23};
+const char pinREb[] = {24, 25};
+const char pinRE[]  = {26, 27};
+const char pinMIb[] = {28, 29};
+const char pinMI[]  = {30, 31};
+const char pinFA[]  = {32, 33};
+const char pinFAd[] = {34, 35};
+const char pinSOL[] = {36, 37};
+const char pinLAb[] = {38, 39};
+const char pinLA[]  = {40, 41};
+const char pinSIb[] = {42, 43};
+const char pinSI[]  = {44, 45};
+const char pinNextOctave[] = {46, 47};
+const char pinPrevOctave[] = {48, 49};
+// ----- END SETTINGS -----
+
+// Initializing capacitive sensors for every tile of the keyboard
+// according to above settings
 CapacitiveSensor sensorDO  = CapacitiveSensor(pinDO[0],pinDO[1]);
 CapacitiveSensor sensorREb = CapacitiveSensor(pinREb[0],pinREb[1]);
 CapacitiveSensor sensorRE  = CapacitiveSensor(pinRE[0],pinRE[1]);
@@ -28,9 +39,8 @@ CapacitiveSensor sensorLAb = CapacitiveSensor(pinLAb[0],pinLAb[1]);
 CapacitiveSensor sensorLA  = CapacitiveSensor(pinLA[0],pinLA[1]);
 CapacitiveSensor sensorSIb = CapacitiveSensor(pinSIb[0],pinSIb[1]);
 CapacitiveSensor sensorSI  = CapacitiveSensor(pinSI[0],pinSI[1]);
-CapacitiveSensor sensorOctaveSuiv = CapacitiveSensor(pinOctaveSuiv[0],pinOctaveSuiv[1]);
-CapacitiveSensor sensorOctavePrec = CapacitiveSensor(pinOctavePrec[0],pinOctavePrec[1]);
-
+CapacitiveSensor sensorOctaveSuiv = CapacitiveSensor(pinNextOctave[0],pinNextOctave[1]);
+CapacitiveSensor sensorOctavePrec = CapacitiveSensor(pinPrevOctave[0],pinPrevOctave[1]);
 
 //Front montant
 boolean DO  = 0;
@@ -84,21 +94,21 @@ unsigned long lastOctaveSuiv = 0;
 unsigned long lastOctavePrec = 0;
 
 void setup() {
-  Serial.begin(9600);
-  //LED octave
-  pinMode(2, OUTPUT);//Octave 0
-  pinMode(3, OUTPUT);//1
-  pinMode(4, OUTPUT);//2
-  pinMode(5, OUTPUT);//3
-  pinMode(6, OUTPUT);//4
-  pinMode(7, OUTPUT);//5
-  pinMode(8, OUTPUT);//6
-  pinMode(9, OUTPUT);//7
-  pinMode(10, OUTPUT);//8
+  Serial.begin(baudRate);
+  
+  pinMode(OctaveLEDs[0], OUTPUT);
+  pinMode(OctaveLEDs[1], OUTPUT);
+  pinMode(OctaveLEDs[2], OUTPUT);
+  pinMode(OctaveLEDs[3], OUTPUT);
+  pinMode(OctaveLEDs[4], OUTPUT);
+  pinMode(OctaveLEDs[5], OUTPUT);
+  pinMode(OctaveLEDs[6], OUTPUT);
+  pinMode(OctaveLEDs[7], OUTPUT);
+  pinMode(OctaveLEDs[8], OUTPUT);
 
-  pinMode(11, OUTPUT);//Confirmation de passage d'octave
+  pinMode(OctaveChangeConfirmation, OUTPUT);
 
-  digitalWrite(octave + 2, 1);
+  digitalWrite(OctaveLEDs[octave], 1);
 }
 
 void loop() {
@@ -194,28 +204,28 @@ void changerOctave() {
   unsigned long Time = millis();
   if (EtatLED11 == 1 && Time - heureAllumageLED11 > 50) {
     EtatLED11 = 0;
-    digitalWrite(11,0);
+    digitalWrite(OctaveChangeConfirmation, 0);
   }
   
   if (OctaveSuivtmp != OctaveSuiv && OctaveSuivtmp == 1 && octave < octaveMax && Time - lastOctaveSuiv > 150) {
     heureAllumageLED11 = Time;
-    digitalWrite(11,1);
+    digitalWrite(OctaveChangeConfirmation, 1);
     EtatLED11 = 1;
     lastOctaveSuiv = Time;
-    digitalWrite(octave + 2, 0);
+    digitalWrite(OctaveLEDs[octave], 0);
     octave++;
-    digitalWrite(octave + 2, 1);
+    digitalWrite(OctaveLEDs[octave], 1);
   }
   OctaveSuiv = OctaveSuivtmp;
 
   if (OctavePrectmp != OctavePrec && OctavePrectmp == 1 && octave > octaveMin && Time - lastOctavePrec > 150) {
     heureAllumageLED11 = Time;
-    digitalWrite(11,1);
+    digitalWrite(OctaveChangeConfirmation, 1);
     EtatLED11 = 1;
     lastOctavePrec = Time;
-    digitalWrite(octave + 2, 0);
+    digitalWrite(OctaveLEDs[octave], 0);
     octave--;
-    digitalWrite(octave + 2, 1);
+    digitalWrite(OctaveLEDs[octave], 1);
   }
   OctavePrec = OctavePrectmp;
 }
