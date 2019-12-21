@@ -6,7 +6,9 @@ const int baudRate = 9600;
 
 // Connections to LEDs
 const char OctaveLEDs[] = {2, 3, 4, 5, 6, 7, 8, 9, 10};
-const char OctaveChangeConfirmation = 11;
+
+//Octave change confirmation LED :(ON during 50ms after each octave change)
+const char LEDOCC = 11;
 
 // Connections between the keyboard and your Arduino:
 const char pinDO[]  = {22, 23};
@@ -23,9 +25,20 @@ const char pinSIb[] = {42, 43};
 const char pinSI[]  = {44, 45};
 const char pinNextOctave[] = {46, 47};
 const char pinPrevOctave[] = {48, 49};
+
+// Octave configuration
+const char octaveMax = 8;
+const char octaveMin = 0;
+const char octaveDef = 3; // Default
+
+// Sensitivity configuration
+char precision = 15;
+int seuilDeDetection = 250;
+
+
 // ----- END SETTINGS -----
 
-// Initializing capacitive sensors for every tile of the keyboard
+// Initializing capacitive sensors for every key of the keyboard
 // according to above settings
 CapacitiveSensor sensorDO  = CapacitiveSensor(pinDO[0],pinDO[1]);
 CapacitiveSensor sensorREb = CapacitiveSensor(pinREb[0],pinREb[1]);
@@ -42,7 +55,7 @@ CapacitiveSensor sensorSI  = CapacitiveSensor(pinSI[0],pinSI[1]);
 CapacitiveSensor sensorOctaveSuiv = CapacitiveSensor(pinNextOctave[0],pinNextOctave[1]);
 CapacitiveSensor sensorOctavePrec = CapacitiveSensor(pinPrevOctave[0],pinPrevOctave[1]);
 
-//Front montant
+//Rising edges:
 boolean DO  = 0;
 boolean REb = 0;
 boolean RE  = 0;
@@ -58,7 +71,7 @@ boolean SI  = 0;
 boolean OctaveSuiv = 0;
 boolean OctavePrec = 0;
 
-//Etat de chaque touche
+//State of every piano key:
 boolean DOtmp  = 0;
 boolean REbtmp = 0;
 boolean REtmp  = 0;
@@ -74,21 +87,13 @@ boolean SItmp  = 0;
 boolean OctaveSuivtmp = 0;
 boolean OctavePrectmp = 0;
 
-//configuration des octaves
-char octaveMax = 8;
-char octaveMin = 0;
-char octaveDef = 3;
-
 char octave = octaveDef;
 
-//configuration de la sensibilité des touches
-char precision = 15;
-int seuilDeDetection = 250;
 char dataString[50] = {0};
 
-//LED 11 (bip de 50ms à chaque changement d'octave)
-unsigned long heureAllumageLED11 = 0;
-boolean EtatLED11 = 0;
+//Octave change confirmation LED "timer"
+unsigned long ToggleTimeLEDOCC = 0;
+boolean StateLEDOCC = 0;
 
 unsigned long lastOctaveSuiv = 0;
 unsigned long lastOctavePrec = 0;
@@ -202,15 +207,15 @@ void envoyerNotes() {
 
 void changerOctave() {
   unsigned long Time = millis();
-  if (EtatLED11 == 1 && Time - heureAllumageLED11 > 50) {
-    EtatLED11 = 0;
-    digitalWrite(OctaveChangeConfirmation, 0);
+  if (StateLEDOCC == 1 && Time - ToggleTimeLEDOCC > 50) {
+    StateLEDOCC = 0;
+    digitalWrite(LEDOCC, 0);
   }
   
   if (OctaveSuivtmp != OctaveSuiv && OctaveSuivtmp == 1 && octave < octaveMax && Time - lastOctaveSuiv > 150) {
-    heureAllumageLED11 = Time;
-    digitalWrite(OctaveChangeConfirmation, 1);
-    EtatLED11 = 1;
+    ToggleTimeLEDOCC = Time;
+    digitalWrite(LEDOCC, 1);
+    StateLEDOCC = 1;
     lastOctaveSuiv = Time;
     digitalWrite(OctaveLEDs[octave], 0);
     octave++;
@@ -219,9 +224,9 @@ void changerOctave() {
   OctaveSuiv = OctaveSuivtmp;
 
   if (OctavePrectmp != OctavePrec && OctavePrectmp == 1 && octave > octaveMin && Time - lastOctavePrec > 150) {
-    heureAllumageLED11 = Time;
-    digitalWrite(OctaveChangeConfirmation, 1);
-    EtatLED11 = 1;
+    ToggleTimeLEDOCC = Time;
+    digitalWrite(LEDOCC, 1);
+    StateLEDOCC = 1;
     lastOctavePrec = Time;
     digitalWrite(OctaveLEDs[octave], 0);
     octave--;
