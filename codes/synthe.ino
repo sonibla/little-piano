@@ -31,9 +31,9 @@ const char octaveMax = 8;
 const char octaveMin = 0;
 const char octaveDef = 3; // Default
 
-// Sensitivity configuration
-char precision = 15;
-int seuilDeDetection = 250;
+// Sensitivity configuration (increasing accuracy causes latency)
+char accuracy = 15;
+int threshold = 250;
 
 
 // ----- END SETTINGS -----
@@ -52,8 +52,8 @@ CapacitiveSensor sensorLAb = CapacitiveSensor(pinLAb[0],pinLAb[1]);
 CapacitiveSensor sensorLA  = CapacitiveSensor(pinLA[0],pinLA[1]);
 CapacitiveSensor sensorSIb = CapacitiveSensor(pinSIb[0],pinSIb[1]);
 CapacitiveSensor sensorSI  = CapacitiveSensor(pinSI[0],pinSI[1]);
-CapacitiveSensor sensorOctaveSuiv = CapacitiveSensor(pinNextOctave[0],pinNextOctave[1]);
-CapacitiveSensor sensorOctavePrec = CapacitiveSensor(pinPrevOctave[0],pinPrevOctave[1]);
+CapacitiveSensor sensorNextOctave = CapacitiveSensor(pinNextOctave[0],pinNextOctave[1]);
+CapacitiveSensor sensorPrevOctave = CapacitiveSensor(pinPrevOctave[0],pinPrevOctave[1]);
 
 //Rising edges:
 boolean DO  = 0;
@@ -68,8 +68,8 @@ boolean LAb = 0;
 boolean LA  = 0;
 boolean SIb = 0;
 boolean SI  = 0;
-boolean OctaveSuiv = 0;
-boolean OctavePrec = 0;
+boolean NextOctave = 0;
+boolean PrevOctave = 0;
 
 //State of every piano key:
 boolean DOtmp  = 0;
@@ -84,19 +84,17 @@ boolean LAbtmp = 0;
 boolean LAtmp  = 0;
 boolean SIbtmp = 0;
 boolean SItmp  = 0;
-boolean OctaveSuivtmp = 0;
-boolean OctavePrectmp = 0;
+boolean NextOctavetmp = 0;
+boolean PrevOctavetmp = 0;
 
 char octave = octaveDef;
-
 char dataString[50] = {0};
-
-//Octave change confirmation LED "timer"
-unsigned long ToggleTimeLEDOCC = 0;
 boolean StateLEDOCC = 0;
 
-unsigned long lastOctaveSuiv = 0;
-unsigned long lastOctavePrec = 0;
+// "timers"
+unsigned long ToggleTimeLEDOCC = 0;
+unsigned long ToggleTimeNextOctave = 0;
+unsigned long ToggleTimePrevOctave = 0;
 
 void setup() {
   Serial.begin(baudRate);
@@ -111,17 +109,17 @@ void setup() {
   pinMode(OctaveLEDs[7], OUTPUT);
   pinMode(OctaveLEDs[8], OUTPUT);
 
-  pinMode(OctaveChangeConfirmation, OUTPUT);
+  pinMode(LEDOCC, OUTPUT);
 
   digitalWrite(OctaveLEDs[octave], 1);
 }
 
 void loop() {
-  actualiser();//fonction pour actualiser les variables telles que "DOtmp"
+  refresh();//refresh variables such as "DOtmp"
 
-  changerOctave();//Fonction pour actualiser l'octave
+  changeOctave();//refresh octave
 
-  envoyerNotes();//fonction pour actualiser les variables telles que "DO" et les envoyer
+  sendNotes();//refresh variables such as "DO" and send them via serial
 }
 
 void envoi(int n) {
@@ -131,7 +129,7 @@ void envoi(int n) {
 
 
 
-void envoyerNotes() {
+void sendNotes() {
   if (DOtmp != DO && DOtmp == 1 && octave != 0) {
     int x = 4 + ( (octave-1) * 12 );
     envoi(x);
@@ -205,133 +203,133 @@ void envoyerNotes() {
   SI = SItmp;
 }
 
-void changerOctave() {
+void changeOctave() {
   unsigned long Time = millis();
   if (StateLEDOCC == 1 && Time - ToggleTimeLEDOCC > 50) {
     StateLEDOCC = 0;
     digitalWrite(LEDOCC, 0);
   }
   
-  if (OctaveSuivtmp != OctaveSuiv && OctaveSuivtmp == 1 && octave < octaveMax && Time - lastOctaveSuiv > 150) {
+  if (NextOctavetmp != NextOctave && NextOctavetmp == 1 && octave < octaveMax && Time - ToggleTimeNextOctave > 150) {
     ToggleTimeLEDOCC = Time;
+    ToggleTimeNextOctave = Time;
     digitalWrite(LEDOCC, 1);
     StateLEDOCC = 1;
-    lastOctaveSuiv = Time;
     digitalWrite(OctaveLEDs[octave], 0);
     octave++;
     digitalWrite(OctaveLEDs[octave], 1);
   }
-  OctaveSuiv = OctaveSuivtmp;
+  NextOctave = NextOctavetmp;
 
-  if (OctavePrectmp != OctavePrec && OctavePrectmp == 1 && octave > octaveMin && Time - lastOctavePrec > 150) {
+  if (PrevOctavetmp != PrevOctave && PrevOctavetmp == 1 && octave > octaveMin && Time - ToggleTimePrevOctave > 150) {
     ToggleTimeLEDOCC = Time;
+    ToggleTimePrevOctave = Time;
     digitalWrite(LEDOCC, 1);
     StateLEDOCC = 1;
-    lastOctavePrec = Time;
     digitalWrite(OctaveLEDs[octave], 0);
     octave--;
     digitalWrite(OctaveLEDs[octave], 1);
   }
-  OctavePrec = OctavePrectmp;
+  PrevOctave = PrevOctavetmp;
 }
 
 
-void actualiser() {
-  if (sensorDO.capacitiveSensor(precision) >= seuilDeDetection) {
+void refresh() {
+  if (sensorDO.capacitiveSensor(accuracy) >= threshold) {
     DOtmp = 1;
   }
   else {
     DOtmp = 0;
   }
 
-  if (sensorREb.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorREb.capacitiveSensor(accuracy) >= threshold) {
     REbtmp = 1;
   }
   else {
     REbtmp = 0;
   }
 
-  if (sensorRE.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorRE.capacitiveSensor(accuracy) >= threshold) {
     REtmp = 1;
   }
   else {
     REtmp = 0;
   }
 
-  if (sensorMIb.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorMIb.capacitiveSensor(accuracy) >= threshold) {
     MIbtmp = 1;
   }
   else {
     MIbtmp = 0;
   }
 
-  if (sensorMI.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorMI.capacitiveSensor(accuracy) >= threshold) {
     MItmp = 1;
   }
   else {
     MItmp = 0;
   }
 
-  if (sensorFA.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorFA.capacitiveSensor(accuracy) >= threshold) {
     FAtmp = 1;
   }
   else {
     FAtmp = 0;
   }
 
-  if (sensorFAd.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorFAd.capacitiveSensor(accuracy) >= threshold) {
     FAdtmp = 1;
   }
   else {
     FAdtmp = 0;
   }
   
-  if (sensorSOL.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorSOL.capacitiveSensor(accuracy) >= threshold) {
     SOLtmp = 1;
   }
   else {
     SOLtmp = 0;
   }
 
-   if (sensorLAb.capacitiveSensor(precision) >= seuilDeDetection) {
+   if (sensorLAb.capacitiveSensor(accuracy) >= threshold) {
     LAbtmp = 1;
   }
   else {
     LAbtmp = 0;
   }
 
-  if (sensorLA.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorLA.capacitiveSensor(accuracy) >= threshold) {
     LAtmp = 1;
   }
   else {
     LAtmp = 0;
   }
 
-  if (sensorSIb.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorSIb.capacitiveSensor(accuracy) >= threshold) {
     SIbtmp = 1;
   }
   else {
     SIbtmp = 0;
   }
 
-  if (sensorSI.capacitiveSensor(precision) >= seuilDeDetection) {
+  if (sensorSI.capacitiveSensor(accuracy) >= threshold) {
     SItmp = 1;
   }
   else {
     SItmp = 0;
   }
   
-  if (sensorOctaveSuiv.capacitiveSensor(precision) >= seuilDeDetection) {
-    OctaveSuivtmp = 1;
+  if (sensorNextOctave.capacitiveSensor(accuracy) >= threshold) {
+    NextOctavetmp = 1;
   }
   else {
-    OctaveSuivtmp = 0;
+    NextOctavetmp = 0;
   }
 
-  if (sensorOctavePrec.capacitiveSensor(precision) >= seuilDeDetection) {
-    OctavePrectmp = 1;
+  if (sensorPrevOctave.capacitiveSensor(accuracy) >= threshold) {
+    PrevOctavetmp = 1;
   }
   else {
-    OctavePrectmp = 0;
+    PrevOctavetmp = 0;
   }
 }
