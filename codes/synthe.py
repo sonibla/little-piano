@@ -6,7 +6,8 @@ import time
 # This code will play piano sounds according to recieved serial data
 
 # /dev/ttyACM0 corresponds to Arduino USB connection
-# 9600 baud is enough
+# 9600 baud is enough (using a very low baud may cause latency)
+# Baud value should be the same in synthe.ino
 ser = serial.Serial('/dev/ttyACM0', 9600)
 debug = False
 
