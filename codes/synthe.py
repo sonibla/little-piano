@@ -24,6 +24,6 @@ while True :
     if debug:
         print(number)
     
-    file = '../WAV/' + number + ".wav"
+    file = '/WAV/' + number + ".wav"
     pygame.mixer.music.load(file)
     pygame.mixer.music.play(0)
