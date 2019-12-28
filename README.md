@@ -37,6 +37,10 @@ Download [CapacitiveSensor](https://playground.arduino.cc/Main/CapacitiveSensor/
 
 Upload [synthe.ino](codes/synthe.ino) on your Arduino. You'll need the Arduino IDE or similar, check [Arduino official site](https://www.arduino.cc/) for more info.
 
+### Electrical connections
+
+Connections are detailed in [images](images) folder.
+
 ## Usage
 
 Simply touch aluminium parts to play sound, use octave changer buttons to play lower or higher.
