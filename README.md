@@ -8,7 +8,9 @@ A simple DIY syhthetizer made with Arduino, Raspberry and paper !
  - Arduino MEGA
  - Raspberry Pi (running a Linux environment with Python 3)
  - USB type B to type A cable (to connect the Arduino and the Raspberry via serial)
- - 10X LEDs - 10X 220Ω resistors
+ - 10X LEDs 
+ - 10X 220Ω resistors
+ - 14X 1MΩ resistors
  - Some cables to connects LEDs to the Arduino
  - A speaker with jack input
  - Aluminium sheets (to create the keyboard)
