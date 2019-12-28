@@ -17,6 +17,10 @@ A simple DIY syhthetizer made with Arduino, Raspberry and paper !
 
 ### On the Raspberry:
 
+Install Python dependencies :
+
+    pip install -r python-requirements.txt
+
 Download sound files and [synthe.py](codes/synthe.py), place sound files in a *WAV* directory.
 
 Don't forget to plug a speaker to the Raspberry.
@@ -28,6 +32,8 @@ After plugging the Arduino on a USB port, open a terminal and type
 to start playing piano.
 
 ### On the Arduino:
+
+Download [CapacitiveSensor](https://playground.arduino.cc/Main/CapacitiveSensor/) library.
 
 Upload [synthe.ino](codes/synthe.ino) on your Arduino. You'll need the Arduino IDE or similar, check [Arduino official site](https://www.arduino.cc/) for more info.
 
