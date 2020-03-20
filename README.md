@@ -53,4 +53,4 @@ You may change sensitivity configuration in [synthe.ino](codes/synthe.ino) if ne
 * **Hugo Graveline**
 
 ## License
-This project is licensed under the [MIT License](https://tldrlegal.com/license/mit-license) - see the [LICENSE](LICENSE) file for details
+This project is licensed under the [MIT License](https://tldrlegal.com/license/mit-license) - see the [LICENSE](LICENSE.md) file for details
